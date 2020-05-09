@@ -6,13 +6,22 @@ from rest_framework.views import APIView
 
 from rest_framework.authtoken.models import Token
 
-from .models import User
+from .models import (
+    User,
+    UserKey
+)
 from .serializers import (
     BaseUserSerializer,
     BaseActivateUserSerializer
 )
 
 class OutsideUserViews(APIView):
+    def get(self, request, method):
+        if method == 'activate':
+            return self.__activate_user(request)
+
+        return self.__wrong_method(request)
+
     def post(self, request, method):
         if method == 'create':
             return self.__create_user(request)
@@ -43,3 +52,31 @@ class OutsideUserViews(APIView):
         }
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+    def __activate_user(self, request):
+        key = request.data['key']
+        try:
+            key = UserKey.objects.get(key=key)
+        except UserKey.DoesNotExist:
+            data = {
+                'err':'invalid key.'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+
+        if not key.is_valid:
+            data = {
+                'err':'key out of validity period'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+
+        user_serializer = BaseActivateUserSerializer(key.user, data=request.data)
+        if user_serializer.is_valid(raise_exception=True):
+            user = user_serializer.save()
+            key.delete()
+
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=user).key
+        }
+
+        return Response(data, status=status.HTTP_202_ACCEPTED)

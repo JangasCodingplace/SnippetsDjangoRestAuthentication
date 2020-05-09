@@ -5,8 +5,4 @@ urlpatterns = [
         'auth/',
         include('User.User.urls'),
     ),
-    path(
-        '',
-        include('User.Key.urls'),
-    )
 ]

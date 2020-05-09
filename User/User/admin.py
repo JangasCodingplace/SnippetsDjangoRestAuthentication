@@ -5,9 +5,10 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
-
-from User.Key.models import UserKey
-from .models import User
+from .models import (
+    User,
+    UserKey
+)
 
 
 class UserKeyInline(admin.TabularInline):
@@ -138,3 +139,24 @@ class UserAdmin(BaseUserAdmin):
 
 admin.site.register(User, UserAdmin)
 admin.site.unregister(Group)
+
+
+class UserKeyAdmin(admin.ModelAdmin):
+    model = UserKey
+    list_display = (
+        'key',
+        'creation_time',
+        'key_type',
+    )
+    search_fields = (
+        'key',
+        'user__email',
+        'user__last_name',
+        'user__first_name',
+    )
+    readonly_fields = (
+        'key',
+        'creation_time',
+    )
+
+admin.site.register(UserKey, UserKeyAdmin)
