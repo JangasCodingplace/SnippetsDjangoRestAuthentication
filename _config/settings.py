@@ -1,4 +1,7 @@
 import os
+import env_file
+
+ENV = env_file.get(path='.env')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -8,10 +11,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'vufx5@n=+x$&bn%o^&269qgpr=9*#3q!3+nv8fzou9($a7!_of'
+SECRET_KEY = ENV['DJANGO_SECRETKEY']
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = ENV['DEBUG']
 
 ALLOWED_HOSTS = ['*']
 
@@ -20,6 +22,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'User',
+    'Email',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -4,8 +4,6 @@ from django.db.models.signals import (
     post_save,
 )
 
-from _config.assets import mail
-
 from rest_framework.authtoken.models import Token
 from .models import User
 
