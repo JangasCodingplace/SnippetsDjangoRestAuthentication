@@ -22,6 +22,8 @@ class OutsideUserViews(APIView):
             return self.__activate_user(request)
         if method == 'password_forgotten':
             return self.__password_forgotten(request)
+        if method == 'get_user_by_key':
+            return self.__get_user_by_key(request)
 
         return self.__wrong_method(request)
 
@@ -87,6 +89,37 @@ class OutsideUserViews(APIView):
 
         return Response(data, status=status.HTTP_200_OK)
 
+    def __get_user_by_key(self, request):
+        """ Only for already activated Users """
+        key = request.data['key']
+        try:
+            key = UserKey.objects.get(key=key)
+        except UserKey.DoesNotExist:
+            data = {
+                'err':'invalid key.'
+            }
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+        if not key.is_valid:
+            data = {
+                'err':'key out of validity period'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+
+        if key.key_type == 'a':
+            data = {
+                'err':'Wrong Keytype.'
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        user_serializer = BaseUserSerializer(key.user)
+
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=key.user).key
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
 
     def __activate_user(self, request):
         key = request.data['key']

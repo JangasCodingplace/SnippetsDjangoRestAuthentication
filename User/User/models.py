@@ -145,10 +145,8 @@ class UserKey(models.Model):
     def is_valid(self):
         if self.key_type == 'a':
             period_time = int(settings.ENV['ACTIVATION_KEY_PERIODS_OF_VALIDITY'])
-        elif self.key_type == 'auth':
-            period_time = int(settings.ENV['ACCES_KEY_PERIODS_OF_VALIDITY'])
         else:
-            period_time = int(settings.ENV['PASSWORD_KEY_PERIODS_OF_VALIDITY'])
+            period_time = int(settings.ENV['ACCES_KEY_PERIODS_OF_VALIDITY'])
         limit_time = self.creation_time + timedelta(minutes=period_time)
         return now() < limit_time
 
