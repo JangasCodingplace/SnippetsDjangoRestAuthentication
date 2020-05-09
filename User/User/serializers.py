@@ -1,11 +1,20 @@
 from rest_framework import serializers
 
-from .models import User
+from .models import (
+    User,
+    UserKey
+)
 
 class BaseUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'is_active', 'password')
+        fields = (
+            'first_name', 
+            'last_name',
+            'email',
+            'is_active',
+            'password'
+        )
 
         extra_kwargs = {
             'password':{
@@ -21,11 +30,31 @@ class BaseUserSerializer(serializers.ModelSerializer):
 class BaseActivateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'is_active')
-        read_only_fields = ('first_name', 'last_name', 'email')
+        fields = (
+            'first_name',
+            'last_name',
+            'email',
+            'is_active'
+        )
+        read_only_fields = (
+            'first_name',
+            'last_name',
+            'email'
+        )
 
     def update(self, instance, validated_data):
         """Handles just Account activation"""
         instance.is_active = True
         instance.save()
         return instance
+
+class BaseUserKeySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserKey
+        fields = (
+            'user',
+            'key_type'
+        )
+
+    def create(self,validated_data):
+        return UserKey.objects.create(**validated_data)

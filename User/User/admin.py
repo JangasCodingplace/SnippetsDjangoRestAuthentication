@@ -148,6 +148,9 @@ class UserKeyAdmin(admin.ModelAdmin):
         'creation_time',
         'key_type',
     )
+    list_filter = (
+        'key_type',
+    )
     search_fields = (
         'key',
         'user__email',

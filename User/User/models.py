@@ -14,7 +14,8 @@ from django.utils.timezone import now
 
 KEY_TYPE = [
     ('pw', 'Password Forgotten'),
-    ('a', 'activation'),
+    ('a', 'Activation'),
+    ('auth', 'Authentication'),
 ]
 
 class UserManager(BaseUserManager):
@@ -81,12 +82,6 @@ class User(AbstractBaseUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name',]
 
-    def __str__(self):
-        return self.email
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
     @property
     def full_name(self):
         return f"{self.last_name}, {self.first_name}"
@@ -101,6 +96,12 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
+
+    def __str__(self):
+        return self.email
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
 
 class UserKey(models.Model):
     key = models.CharField(
@@ -117,25 +118,16 @@ class UserKey(models.Model):
         auto_now_add=True
     )
     key_type = models.CharField(
-        max_length=2,
+        max_length=4,
         choices=KEY_TYPE,
     )
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            if self.user.is_active and self.key_type=='a':
-                raise AttributeError('An active User can not have an validation key.')
-
-            self.key = uuid.uuid4().hex[:8]
-            while UserKey.objects.filter(key=self.key).exists():
-                self.key = uuid.uuid4().hex[:8]
-
-        super().save(*args, **kwargs)
 
     @property
     def is_valid(self):
         if self.key_type == 'a':
             period_time = int(settings.ENV['ACTIVATION_KEY_PERIODS_OF_VALIDITY'])
+        elif self.key_type == 'auth':
+            period_time = int(settings.ENV['ACCES_KEY_PERIODS_OF_VALIDITY'])
         else:
             period_time = int(settings.ENV['PASSWORD_KEY_PERIODS_OF_VALIDITY'])
         limit_time = self.creation_time + timedelta(minutes=period_time)
@@ -145,7 +137,7 @@ class UserKey(models.Model):
         mail_template_path = os.path.join(
             settings.BASE_DIR,
             'User',
-            'Key',
+            'User',
             'templates',
             'mails',
             'activation.html'
@@ -159,6 +151,64 @@ class UserKey(models.Model):
             settings.ENV['FRONTEND_ACCOUNT_ACTIVATION_URL'],
             self.key
         )
-        body = body.replace('{{USER}}', self.user.first_name)
-        body = body.replace('{{ACTIVATION_KEY}}', activation_link)
+        body = body.replace(
+            '{{USER}}',
+            self.user.first_name
+        )
+        body = body.replace(
+            '{{ACTIVATION_KEY}}',
+            activation_link
+        )
         return body
+
+    def get_pw_reset_message(self):
+        mail_template_path = os.path.join(
+            settings.BASE_DIR,
+            'User',
+            'User',
+            'templates',
+            'mails',
+            'password_forgotten.html'
+        )
+        mail_template = open(mail_template_path, 'r')
+        body = mail_template.read()
+        mail_template.close()
+        reset_link = "{}{}?key={}".format(
+            settings.ENV['FRONTEND_URL'],
+            settings.ENV['FRONTEND_ACCOUNT_PASSWORD_FORGOTTEN_URL'],
+            self.key
+        )
+        body = body.replace(
+            '{{USER}}',
+            self.user.first_name
+        )
+        body = body.replace(
+            '{{KEY_CREATION_TIME}}',
+            self.creation_time.strftime("%m.%d.%Y, %H:%M:%S")
+        )
+        body = body.replace(
+            '{{PW_RESET_LINK}}',
+            reset_link
+        )
+
+        return body
+
+    def __str__(self):
+        return f'{self.key} ({self.key_type})'
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            if self.key_type == 'a':
+                if self.user.is_active:
+                    raise AttributeError('An active User can not have an validation key.')
+
+            else:
+                if not self.user.is_active:
+                    raise ValueError('A not activated User can not get Access by Email or Reset Password.')
+                UserKey.objects.filter(user=self.user).delete()
+
+            self.key = uuid.uuid4().hex[:8]
+            while UserKey.objects.filter(key=self.key).exists():
+                self.key = uuid.uuid4().hex[:8]
+
+        super().save(*args, **kwargs)

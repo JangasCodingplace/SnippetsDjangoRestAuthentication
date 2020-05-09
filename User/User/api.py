@@ -12,13 +12,16 @@ from .models import (
 )
 from .serializers import (
     BaseUserSerializer,
-    BaseActivateUserSerializer
+    BaseActivateUserSerializer,
+    BaseUserKeySerializer
 )
 
 class OutsideUserViews(APIView):
     def get(self, request, method):
         if method == 'activate':
             return self.__activate_user(request)
+        if method == 'password_forgotten':
+            return self.__password_forgotten(request)
 
         return self.__wrong_method(request)
 
@@ -61,7 +64,7 @@ class OutsideUserViews(APIView):
             data = {
                 'err':'invalid key.'
             }
-            return Response(data, status=status.HTTP_403_FORBIDDEN)
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
 
         if not key.is_valid:
             data = {
@@ -80,3 +83,27 @@ class OutsideUserViews(APIView):
         }
 
         return Response(data, status=status.HTTP_202_ACCEPTED)
+
+    def __password_forgotten(self,request):
+        try:
+            user = User.objects.get(email=request.data['email'])
+        except User.DoesNotExist:
+            data = {
+                'err':'User with that Email does already exist.'
+            }
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+        data = {
+            'user':user.id,
+            'key_type':'pw',
+        }
+        UserKey.objects.create(
+            user=user,
+            key_type='pw'
+        )
+
+        data = {
+            'msg':'Email was sended to given Email.'
+        }
+
+        return Response(data, status=status.HTTP_200_OK)

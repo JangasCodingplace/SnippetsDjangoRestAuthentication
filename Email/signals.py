@@ -12,13 +12,21 @@ from . import email
 
 @receiver(post_save, sender=UserKey)
 def send_activation_mail(*args, **kwargs):
-    if settings.ENV['SEND_ACTIVATION_MAIL'] == 'False':
-        return
     if kwargs['created']:
         key = kwargs['instance']
-        if not key.user.is_active:
+        if key.key_type == 'a':
+            if settings.ENV['SEND_ACTIVATION_MAIL'] == 'False':
+                return
             email.send_message(
                 message=key.get_activation_message(),
                 receiver=key.user.email,
                 subject='Activate your Account!'
+            )
+        if key.key_type == 'pw':
+            if settings.ENV['SEND_PASSWORD_FORGOTTEN_MAIL'] == 'False':
+                return
+            email.send_message(
+                message=key.get_pw_reset_message(),
+                receiver=key.user.email,
+                subject='Password Reset Link'
             )
