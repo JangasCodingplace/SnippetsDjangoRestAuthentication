@@ -1,9 +1,15 @@
 from django.dispatch import receiver
 
-# from django.db.models.signals import (
-#     post_save,
-# )
+from django.db.models.signals import (
+    post_save,
+)
 
-# @receiver(post_save, sender=User)
-# def signal(sender,*args,**kwargs):
-    # pass
+from rest_framework.authtoken.models import Token
+from .models import User
+
+@receiver(post_save, sender=User)
+def create_token(*args, **kwargs):
+    if kwargs['created']:
+        Token.objects.create(
+            user=kwargs['instance']
+        )
