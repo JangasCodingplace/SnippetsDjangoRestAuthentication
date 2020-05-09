@@ -14,18 +14,18 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('email','first_name','last_name',)
+        fields = ('email', 'first_name', 'last_name',)
 
     def clean_password2(self):
-        password1 = self.cleaned_data.get("password1")
-        password2 = self.cleaned_data.get("password2")
+        password1 = self.cleaned_data.get('password1')
+        password2 = self.cleaned_data.get('password2')
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError("Passwords don't match")
         return password2
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password1"])
+        user.set_password(self.cleaned_data['password1'])
         if commit:
             user.save()
         return user
@@ -45,16 +45,16 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
 
-    list_display = ('email', 'first_name', 'last_name','is_admin',)
+    list_display = ('email', 'first_name', 'last_name', 'is_admin',)
     list_filter = ('is_admin',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
         ('Permissions', {'fields': ('is_admin',)}),
-        ('Dates', {'fields': ('registration_date','last_login',)}),
+        ('Dates', {'fields': ('registration_date', 'last_login',)}),
     )
 
-    readonly_fields = ( 'registration_date','last_login',)
+    readonly_fields = ('registration_date', 'last_login',)
 
     add_fieldsets = (
         (None, {
@@ -62,7 +62,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'first_name', 'last_name', 'password1', 'password2'),
         }),
     )
-    search_fields = ('email','last_name','first_name',)
+    search_fields = ('email', 'last_name', 'first_name',)
     ordering = ('email',)
     filter_horizontal = ()
 
