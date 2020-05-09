@@ -4,7 +4,7 @@ from . import api
 
 urlpatterns = [
     path(
-        '<slug:method>/',
+        '<slug:method>',
         api.OutsideUserViews.as_view(),
         name='APIUserOutsideViews'
     ),

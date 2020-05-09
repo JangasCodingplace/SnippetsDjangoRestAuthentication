@@ -7,20 +7,32 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 
 from .models import User
-from .serializers import BaseUserSerializer
+from .serializers import (
+    BaseUserSerializer,
+    BaseActivateUserSerializer
+)
 
 class OutsideUserViews(APIView):
+    def get(self,request, method):
+        if method == 'activate':
+            return self.__activate_user(request)
+
+        return self.__wrong_method(request)
+
     def post(self, request, method):
         if method == 'create':
-            return self.create_user(request)
+            return self.__create_user(request)
 
+        return self.__wrong_method(request)
+
+    def __wrong_method(self,request):
         data = {
             'err':'Wrong or missing URL Method',
         }
 
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
-    def create_user(self, request):
+    def __create_user(self, request):
         if User.objects.filter(email=request.data['email']).exists():
             data = {
                 'err':'User with that Email does already exist.'
@@ -37,3 +49,30 @@ class OutsideUserViews(APIView):
         }
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+    def __activate_user(self,request):
+        key = request.data['key']
+        try:
+            user = User.objects.get(activation_key=key)
+        except User.DoesNotExist:
+            data = {
+                'err':'invalid key.'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+
+        if not user.activation_key_is_valid:
+            data = {
+                'err':'key out of validity period'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+
+        user_serializer = BaseActivateUserSerializer(user, data=request.data)
+        if user_serializer.is_valid(raise_exception=True):
+            user = user_serializer.save()
+
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=user).key
+        }
+
+        return Response(data, status=status.HTTP_202_ACCEPTED)

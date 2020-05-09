@@ -5,7 +5,7 @@ from .models import User
 class BaseUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ('first_name', 'last_name', 'email', 'is_active', 'password')
 
         extra_kwargs = {
             'password':{
@@ -14,4 +14,18 @@ class BaseUserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
+        """Creates New User"""
         return User.objects.create(**validated_data)
+
+
+class BaseActivateUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'is_active')
+        read_only_fields = ('first_name', 'last_name', 'email')
+
+    def update(self, instance, validated_data):
+        """Handles just Account activation"""
+        instance.is_active = True
+        instance.save()
+        return instance

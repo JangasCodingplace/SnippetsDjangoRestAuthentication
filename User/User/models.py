@@ -1,8 +1,3 @@
-import uuid
-import os
-from datetime import timedelta
-from datetime import datetime
-
 from django.conf import settings
 from django.db import models
 
@@ -64,15 +59,7 @@ class User(AbstractBaseUser):
     registration_date = models.DateTimeField(
         auto_now_add=True
     )
-    activation_key = models.CharField(
-        max_length=8,
-        blank=True
-    )
-    activation_key_creation_time = models.DateTimeField(
-        blank=True,
-        null=True
-    )
-    activation_date = models.DateTimeField(
+    first_activation_date = models.DateTimeField(
         blank=True,
         null=True,
         editable=False
@@ -87,35 +74,12 @@ class User(AbstractBaseUser):
         return self.email
 
     def save(self, *args, **kwargs):
-        if not self.is_active and self.activation_key == '':
-            self.activation_key = self.create_activation_key()
-            self.activation_key_creation_time = now()
-        if self.is_active and self.activation_key != '':
-            self.activation_key = ''
-            self.activation_date = now()
         super().save(*args, **kwargs)
-
-    def create_activation_key(self):
-        key = uuid.uuid4().hex[:8]
-        while User.objects.filter(activation_key=key).exists():
-            key = uuid.uuid4().hex[:8]
-        return key
 
     @property
     def full_name(self):
         return f"{self.last_name}, {self.first_name}"
 
-    @property
-    def activation_key_is_valid(self):
-        return (
-            self.activation_key_creation_time < (
-                now() + timedelta(
-                    minutes=int(
-                        settings.ENV['ACTIVATION_KEY_PERIOS_OF_VALIDITY']
-                    )
-                )
-            )
-        )
 
     def has_perm(self, perm, obj=None):
         return True
@@ -127,24 +91,3 @@ class User(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
 
-    def get_activation_message(self):
-        mail_template_path = os.path.join(
-            settings.BASE_DIR,
-            'User',
-            'User',
-            'templates',
-            'mails',
-            'activation.html'
-        )
-
-        mail_template = open(mail_template_path, 'r')
-        body = mail_template.read()
-        mail_template.close()
-        activation_link = "{}{}?key={}".format(
-            settings.ENV['FRONTEND_URL'],
-            settings.ENV['FRONTEND_ACCOUNT_ACTIVATION_URL'],
-            self.activation_key
-        )
-        body = body.replace('{{USER}}', self.first_name)
-        body = body.replace('{{ACTIVATION_KEY}}', activation_link)
-        return body

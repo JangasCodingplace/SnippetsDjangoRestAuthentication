@@ -5,8 +5,17 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
+
+from User.Key.models import UserKey
 from .models import User
 
+
+class UserKeyInline(admin.TabularInline):
+    model = UserKey
+    readonly_fields = (
+        'key',
+        'creation_time',
+    )
 
 class UserCreationForm(forms.ModelForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
@@ -14,7 +23,11 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name',)
+        fields = (
+            'email',
+            'first_name',
+            'last_name',
+        )
 
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')
@@ -36,6 +49,7 @@ class UserChangeForm(forms.ModelForm):
     class Meta:
         model = User
         fields = '__all__'
+        inlines = (UserKeyInline,)
 
     def clean_password(self):
         return self.initial["password"]
@@ -45,33 +59,81 @@ class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
 
-    list_display = ('email', 'first_name', 'last_name', 'is_admin',)
-    list_filter = ('is_admin',)
+    key_inlines = (UserKeyInline,)
+
+    list_display = (
+        'email',
+        'first_name',
+        'last_name',
+        'is_active',
+        'is_admin',
+    )
+    list_filter = (
+        'is_admin',
+        'is_active'
+    )
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name',)}),
-        ('Permissions', {'fields': ('is_admin','is_active')}),
-        ('Dates', {'fields': ('registration_date', 'last_login',)}),
-        ('Activation', {'fields': ('activation_key','activation_key_creation_time','activation_date',)}),
+        (None, {
+            'fields': (
+                'email',
+                'password'
+            )
+        }),
+        ('Personal info', {
+            'fields': (
+                'first_name',
+                'last_name',
+            )
+        }),
+        ('Permissions', {
+            'fields': (
+                'is_admin',
+                'is_active'
+            )
+        }),
+        ('Dates', {
+            'fields': (
+                'registration_date',
+                'last_login',
+                'first_activation_date',
+            )
+        }),
     )
 
     readonly_fields = (
         'registration_date',
         'last_login',
-        'activation_key',
-        'activation_date',
-        'activation_key_creation_time',
+        'first_activation_date',
     )
 
     add_fieldsets = (
         (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2'),
+            'classes': (
+                'wide',
+            ),
+            'fields': (
+                'email',
+                'first_name',
+                'last_name',
+                'password1',
+                'password2'
+            ),
         }),
     )
-    search_fields = ('email', 'last_name', 'first_name',)
-    ordering = ('email',)
+    search_fields = (
+        'email',
+        'last_name',
+        'first_name',
+    )
+    ordering = (
+        'email',
+    )
     filter_horizontal = ()
+
+    def get_inlines(self, request, obj=None):
+        if obj:
+            return self.key_inlines
+        return ()
 
 
 admin.site.register(User, UserAdmin)

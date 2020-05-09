@@ -7,3 +7,4 @@ class UserConfig(AppConfig):
 
     def ready(self):
         import User.User
+        import User.Key
