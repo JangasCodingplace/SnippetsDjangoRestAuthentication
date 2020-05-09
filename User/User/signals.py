@@ -2,7 +2,7 @@ from django.dispatch import receiver
 
 from django.db.models.signals import (
     post_save,
-    pre_save
+    post_init
 )
 
 from rest_framework.authtoken.models import Token
@@ -25,3 +25,8 @@ def create_access_key(*args, **kwargs):
             user=kwargs['instance'],
             key_type='a'
         )
+
+@receiver(post_init, sender=User)
+def create_previous_version(*args, **kwargs):
+    user = kwargs['instance']
+    user.previous_version = user

@@ -76,7 +76,7 @@ class User(AbstractBaseUser):
         null=True,
         editable=False
     )
-
+    previous_version = None
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -96,6 +96,25 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
+    
+    def get_email_change_mail(self):
+        mail_template_path = os.path.join(
+            settings.BASE_DIR,
+            'User',
+            'User',
+            'templates',
+            'mails',
+            'email_change_notification.html'
+        )
+
+        mail_template = open(mail_template_path, 'r')
+        body = mail_template.read()
+        mail_template.close()
+        body = body.replace(
+            '{{USER}}',
+            self.first_name
+        )
+        return body
 
     def __str__(self):
         return self.email

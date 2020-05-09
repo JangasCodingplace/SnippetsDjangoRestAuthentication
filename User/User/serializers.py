@@ -74,17 +74,7 @@ class BaseResetPWUserSerializer(serializers.ModelSerializer):
         """
             Handles just PW Reset
         """
+        print(validated_data['password'])
         instance.set_password(validated_data['password'])
         instance.save()
         return instance
-
-class BaseUserKeySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserKey
-        fields = (
-            'user',
-            'key_type'
-        )
-
-    def create(self,validated_data):
-        return UserKey.objects.create(**validated_data)

@@ -14,7 +14,6 @@ from .serializers import (
     BaseUserSerializer,
     BaseActivateUserSerializer,
     BaseResetPWUserSerializer,
-    BaseUserKeySerializer
 )
 
 class OutsideUserViews(APIView):
