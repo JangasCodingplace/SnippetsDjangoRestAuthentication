@@ -13,6 +13,7 @@ from .models import (
 from .serializers import (
     BaseUserSerializer,
     BaseActivateUserSerializer,
+    BaseResetPWUserSerializer,
     BaseUserKeySerializer
 )
 
@@ -28,6 +29,8 @@ class OutsideUserViews(APIView):
     def post(self, request, method):
         if method == 'create':
             return self.__create_user(request)
+        if method == 'reset_password':
+            return self.__reset_password(request)
 
         return self.__wrong_method(request)
 
@@ -55,6 +58,36 @@ class OutsideUserViews(APIView):
         }
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+    def __reset_password(self, request):
+        try:
+            key = UserKey.objects.get(
+                key=request.data['key'],
+                key_type='pw'
+            )
+        except UserKey.DoesNotExist:
+            data = {
+                'err':'invalid key.'
+            }
+            return Response(data, status=status.HTTP_404_NOT_FOUND)
+        if not key.is_valid:
+            data = {
+                'err':'key out of validity period'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+
+        user_serializer = BaseResetPWUserSerializer(key.user, request.data)
+        if user_serializer.is_valid(raise_exception=True):
+            user = user_serializer.save()
+            key.delete()
+
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=user).key
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
 
     def __activate_user(self, request):
         key = request.data['key']

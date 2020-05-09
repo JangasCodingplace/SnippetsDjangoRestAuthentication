@@ -48,6 +48,36 @@ class BaseActivateUserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+class BaseResetPWUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'first_name',
+            'last_name',
+            'email',
+            'is_active',
+            'password'
+        )
+        read_only_fields = (
+            'first_name',
+            'last_name',
+            'is_active',
+            'email'
+        )
+        extra_kwargs = {
+            'password':{
+                'write_only':True,
+            },
+        }
+
+    def update(self, instance, validated_data):
+        """
+            Handles just PW Reset
+        """
+        instance.set_password(validated_data['password'])
+        instance.save()
+        return instance
+
 class BaseUserKeySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserKey
