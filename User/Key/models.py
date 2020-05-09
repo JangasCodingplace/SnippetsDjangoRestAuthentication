@@ -1,12 +1,12 @@
 import uuid
 import os
 
+from django.conf import settings
+
 from django.utils.timezone import now
 from datetime import timedelta
 
 from django.db import models
-
-from django.conf import settings
 
 KEY_TYPE = [
     ('pw', 'Password Forgotten'),
@@ -34,13 +34,17 @@ class UserKey(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
+            if self.user.is_active and self.key_type=='a':
+                raise AttributeError('An active User can not have an validation key.')
+
             self.key = uuid.uuid4().hex[:8]
             while UserKey.objects.filter(key=self.key).exists():
                 self.key = uuid.uuid4().hex[:8]
+
         super().save(*args, **kwargs)
 
     @property
-    def key_is_valid(self):
+    def is_valid(self):
         if self.key_type == 'a':
             period_time = int(settings.ENV['ACTIVATION_KEY_PERIODS_OF_VALIDITY'])
         else:
