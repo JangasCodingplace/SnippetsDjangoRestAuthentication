@@ -50,11 +50,18 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name',)}),
-        ('Permissions', {'fields': ('is_admin',)}),
+        ('Permissions', {'fields': ('is_admin','is_active')}),
         ('Dates', {'fields': ('registration_date', 'last_login',)}),
+        ('Activation', {'fields': ('activation_key','activation_key_creation_time','activation_date',)}),
     )
 
-    readonly_fields = ('registration_date', 'last_login',)
+    readonly_fields = (
+        'registration_date',
+        'last_login',
+        'activation_key',
+        'activation_date',
+        'activation_key_creation_time',
+    )
 
     add_fieldsets = (
         (None, {
