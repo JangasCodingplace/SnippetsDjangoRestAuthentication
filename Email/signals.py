@@ -38,7 +38,7 @@ def send_activation_mail(*args, **kwargs):
 @receiver(pre_save, sender=User)
 def send_email_change_mail(*args, **kwargs):
     user = kwargs['instance']
-    if user:
+    if user.pk:
         old_email = User.objects.get(pk=user.pk).email
         if user.email != old_email:
             if settings.ENV['SEND_EMAIL_CHANGE_NOTIFICATION_MAIL'] == 'False':

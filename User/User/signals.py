@@ -25,8 +25,9 @@ def create_access_key(*args, **kwargs):
             user=kwargs['instance'],
             key_type='a'
         )
-
-@receiver(post_init, sender=User)
-def create_previous_version(*args, **kwargs):
-    user = kwargs['instance']
-    user.previous_version = user
+    else:
+        if kwargs['instance'].is_active:
+            UserKey.objects.filter(
+                user=kwargs['instance'],
+                key_type='a'
+            ).delete()

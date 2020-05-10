@@ -119,8 +119,6 @@ class User(AbstractBaseUser):
     def __str__(self):
         return self.email
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
 class UserKey(models.Model):
     key = models.CharField(
