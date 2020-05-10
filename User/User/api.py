@@ -1,3 +1,5 @@
+from django.contrib.auth import authenticate
+
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -33,6 +35,8 @@ class OutsideUserViews(APIView):
             return self.__create_user(request)
         if method == 'reset_password':
             return self.__reset_password(request)
+        if method == 'authentication':
+            return self.__authentication(request)
 
         return self.__wrong_method(request)
 
@@ -60,6 +64,25 @@ class OutsideUserViews(APIView):
         }
 
         return Response(data, status=status.HTTP_201_CREATED)
+
+    def __authentication(self, request):
+        print('HELLO')
+        user = authenticate(
+            request,
+            email=request.data['email'],
+            password=request.data['password']
+        )
+        if user is None:
+            data = {
+                'err':'User does not exist or wrong password.'
+            }
+            return Response(data, status=status.HTTP_403_FORBIDDEN)
+        user_serializer = BaseUserSerializer(user)
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=user).key
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
     def __reset_password(self, request):
         try:
@@ -151,7 +174,7 @@ class OutsideUserViews(APIView):
 
         return Response(data, status=status.HTTP_202_ACCEPTED)
 
-    def __password_forgotten(self,request):
+    def __password_forgotten(self, request):
         try:
             user = User.objects.get(email=request.data['email'])
         except User.DoesNotExist:
