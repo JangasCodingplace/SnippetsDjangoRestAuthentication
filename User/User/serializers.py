@@ -12,13 +12,12 @@ class BaseUserSerializer(serializers.ModelSerializer):
             'first_name', 
             'last_name',
             'email',
-            'is_active',
             'password'
         )
 
         extra_kwargs = {
             'password':{
-                'write_only':True,
+                'write_only':True
             },
         }
 
@@ -26,6 +25,46 @@ class BaseUserSerializer(serializers.ModelSerializer):
         """Creates New User"""
         return User.objects.create(**validated_data)
 
+class BaseUserChangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'first_name', 
+            'last_name',
+            'email',
+            'is_active'
+        )
+
+        extra_kwargs = {
+            'is_active':{
+                'read_only':True,
+            },
+            'first_name':{
+                'required':False
+            },
+            'last_name':{
+                'required':False
+            },
+            'email':{
+                'required':False
+            },
+        }
+
+    def update(self, instance, validated_data):
+        instance.first_name = validated_data.get(
+            'first_name',
+            instance.first_name
+        )
+        instance.last_name = validated_data.get(
+            'last_name',
+            instance.last_name
+        )
+        instance.email = validated_data.get(
+            'email',
+            instance.email
+        )
+        instance.save()
+        return instance
 
 class BaseActivateUserSerializer(serializers.ModelSerializer):
     class Meta:

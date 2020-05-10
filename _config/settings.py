@@ -49,6 +49,12 @@ MIDDLEWARE = [
 ROOT_URLCONF = '_config.urls'
 AUTH_USER_MODEL = 'User.User'
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

@@ -5,6 +5,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 from .models import (
     User,
@@ -14,6 +16,7 @@ from .serializers import (
     BaseUserSerializer,
     BaseActivateUserSerializer,
     BaseResetPWUserSerializer,
+    BaseUserChangeSerializer,
 )
 
 class OutsideUserViews(APIView):
@@ -113,6 +116,7 @@ class OutsideUserViews(APIView):
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
         user_serializer = BaseUserSerializer(key.user)
+        key.delete()
 
         data = {
             'user':user_serializer.data,
@@ -171,4 +175,45 @@ class OutsideUserViews(APIView):
             'msg':'Email was sended to given Email.'
         }
 
+        return Response(data, status=status.HTTP_200_OK)
+
+class UserViwes(APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, method):
+        if method == 'change_password':
+            return self.__change_password(request)
+        if method == 'update_user_infos':
+            return self.__update_user_infos(request)
+
+        return self.__wrong_method(request)
+
+    def __wrong_method(self, request):
+        data = {
+            'err':'Wrong or missing URL Method',
+        }
+
+        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+    def __change_password(self, request):
+        user_serializer = BaseResetPWUserSerializer(request.user, request.data)
+        if user_serializer.is_valid(raise_exception=True):
+            user = user_serializer.save()
+
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=user).key
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    def __update_user_infos(self, request):
+        user_serializer = BaseUserChangeSerializer(request.user, data=request.data)
+        if user_serializer.is_valid(raise_exception=True):
+            user = user_serializer.save()
+        data = {
+            'user':user_serializer.data,
+            'token':Token.objects.get(user=user).key
+        }
         return Response(data, status=status.HTTP_200_OK)
