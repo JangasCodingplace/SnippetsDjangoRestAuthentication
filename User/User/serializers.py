@@ -2,23 +2,28 @@ from rest_framework import serializers
 
 from .models import (
     User,
-    UserKey
+    UserKey,
+    OpenSession
 )
 
 class BaseUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'first_name', 
+            'first_name',
             'last_name',
             'email',
-            'password'
+            'password',
+            'is_active',
         )
 
         extra_kwargs = {
             'password':{
                 'write_only':True
             },
+            'is_active':{
+                'read_only':True
+            }
         }
 
     def create(self, validated_data):
@@ -117,3 +122,18 @@ class BaseResetPWUserSerializer(serializers.ModelSerializer):
         instance.set_password(validated_data['password'])
         instance.save()
         return instance
+
+
+class OpenSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpenSession
+        fields = '__all__'
+
+        extra_kwargs = {
+            'password':{
+                'write_only':True,
+            },
+        }
+    
+    def create(self, validated_data):
+        return OpenSession.objects.create(**validated_data)

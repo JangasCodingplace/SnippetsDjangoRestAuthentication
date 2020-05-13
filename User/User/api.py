@@ -17,6 +17,7 @@ from .serializers import (
     BaseActivateUserSerializer,
     BaseResetPWUserSerializer,
     BaseUserChangeSerializer,
+    OpenSessionSerializer
 )
 
 class OutsideUserViews(APIView):
@@ -57,16 +58,22 @@ class OutsideUserViews(APIView):
         user_serializer = BaseUserSerializer(data=request.data)
         if user_serializer.is_valid(raise_exception=True):
             new_user = user_serializer.save()
+        
+        open_session_serializer = OpenSessionSerializer(
+            data={'user':new_user.id}
+        )
+        if open_session_serializer.is_valid(raise_exception=True):
+            open_session = open_session_serializer.save()
 
         data = {
             'user':user_serializer.data,
-            'token':Token.objects.get(user=new_user).key
+            'token':Token.objects.get(user=new_user).key,
+            'session':open_session.key
         }
 
         return Response(data, status=status.HTTP_201_CREATED)
 
     def __authentication(self, request):
-        print('HELLO')
         user = authenticate(
             request,
             email=request.data['email'],
@@ -78,9 +85,17 @@ class OutsideUserViews(APIView):
             }
             return Response(data, status=status.HTTP_403_FORBIDDEN)
         user_serializer = BaseUserSerializer(user)
+        
+        open_session_serializer = OpenSessionSerializer(
+            data={'user':user.id}
+        )
+        if open_session_serializer.is_valid(raise_exception=True):
+            open_session = open_session_serializer.save()
+
         data = {
             'user':user_serializer.data,
-            'token':Token.objects.get(user=user).key
+            'token':Token.objects.get(user=user).key,
+            'session':open_session.key
         }
         return Response(data, status=status.HTTP_200_OK)
 

@@ -230,7 +230,7 @@ class UserKey(models.Model):
         super().save(*args, **kwargs)
 
 class OpenSession(models.Model):
-    key = CharField(
+    key = models.CharField(
         max_length=32,
         primary_key=True,
         editable=False
@@ -253,5 +253,5 @@ class OpenSession(models.Model):
             self.key = uuid.uuid4().hex
             while OpenSession.objects.filter(key=self.key).exists():
                 self.key = uuid.uuid4().hex
-            self.token = Token.objects.get(user=user)
+            self.token = Token.objects.get(user=self.user)
         super().save(*args,**kwargs)
