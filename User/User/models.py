@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
+from rest_framework.authtoken.models import Token
 
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser
@@ -227,3 +228,30 @@ class UserKey(models.Model):
                 self.key = uuid.uuid4().hex[:8]
 
         super().save(*args, **kwargs)
+
+class OpenSession(models.Model):
+    key = CharField(
+        max_length=32,
+        primary_key=True,
+        editable=False
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+    token = models.ForeignKey(
+        Token,
+        on_delete=models.CASCADE,
+        editable=False
+    )
+
+    def __str__(self):
+        return self.key
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.key = uuid.uuid4().hex
+            while OpenSession.objects.filter(key=self.key).exists():
+                self.key = uuid.uuid4().hex
+            self.token = Token.objects.get(user=user)
+        super().save(*args,**kwargs)

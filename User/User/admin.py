@@ -7,8 +7,24 @@ from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
 from .models import (
     User,
-    UserKey
+    UserKey,
+    OpenSession
 )
+
+class OpenSessionInline(admin.TabularInline):
+    model = OpenSession
+    readonly_fields = (
+        'token',
+        'key',
+    )
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class UserKeyInline(admin.TabularInline):
@@ -59,8 +75,6 @@ class UserChangeForm(forms.ModelForm):
 class UserAdmin(BaseUserAdmin):
     form = UserChangeForm
     add_form = UserCreationForm
-
-    key_inlines = (UserKeyInline,)
 
     list_display = (
         'email',
@@ -133,7 +147,7 @@ class UserAdmin(BaseUserAdmin):
 
     def get_inlines(self, request, obj=None):
         if obj:
-            return self.key_inlines
+            return (UserKeyInline,OpenSessionInline)
         return ()
 
 
@@ -163,3 +177,33 @@ class UserKeyAdmin(admin.ModelAdmin):
     )
 
 admin.site.register(UserKey, UserKeyAdmin)
+
+
+class OpenSessionAdmin(admin.ModelAdmin):
+    model = OpenSession
+    list_display = (
+        'key',
+        'user',
+        'token'
+    )
+    search_fields = (
+        'key',
+        'token__key',
+        'user__email',
+        'user__last_name',
+        'user__first_name',
+    )
+    readonly_fields = (
+        'token',
+        'key',
+    )
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
