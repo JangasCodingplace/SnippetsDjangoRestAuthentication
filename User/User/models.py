@@ -228,30 +228,3 @@ class UserKey(models.Model):
                 self.key = uuid.uuid4().hex[:8]
 
         super().save(*args, **kwargs)
-
-class OpenSession(models.Model):
-    key = models.CharField(
-        max_length=32,
-        primary_key=True,
-        editable=False
-    )
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE
-    )
-    token = models.ForeignKey(
-        Token,
-        on_delete=models.CASCADE,
-        editable=False
-    )
-
-    def __str__(self):
-        return self.key
-
-    def save(self, *args, **kwargs):
-        if not self.pk:
-            self.key = uuid.uuid4().hex
-            while OpenSession.objects.filter(key=self.key).exists():
-                self.key = uuid.uuid4().hex
-            self.token = Token.objects.get(user=self.user)
-        super().save(*args,**kwargs)

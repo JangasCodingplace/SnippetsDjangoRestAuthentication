@@ -1,3 +1,4 @@
+import datetime
 from django.contrib.auth import authenticate
 
 from rest_framework.response import Response
@@ -5,8 +6,18 @@ from rest_framework import status
 from rest_framework.views import APIView
 
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import TokenAuthentication
+from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
+
+from User.ClientInformation.serializers import ClientSerializer
+
+from User.ClientInformation.assets import (
+    get_device_obj,
+    get_browser_obj,
+    get_os_obj,
+    get_client_ip,
+    insert_client_session
+)
 
 from .models import (
     User,
@@ -16,8 +27,7 @@ from .serializers import (
     BaseUserSerializer,
     BaseActivateUserSerializer,
     BaseResetPWUserSerializer,
-    BaseUserChangeSerializer,
-    OpenSessionSerializer
+    BaseUserChangeSerializer
 )
 
 class OutsideUserViews(APIView):
@@ -28,6 +38,11 @@ class OutsideUserViews(APIView):
             return self.__password_forgotten(request)
         if method == 'get_user_by_key':
             return self.__get_user_by_key(request)
+
+        s = request.session
+        c = request.COOKIES
+        r = request
+        return Response({'success':request.COOKIES})
 
         return self.__wrong_method(request)
 
@@ -59,18 +74,14 @@ class OutsideUserViews(APIView):
         if user_serializer.is_valid(raise_exception=True):
             new_user = user_serializer.save()
         
-        open_session_serializer = OpenSessionSerializer(
-            data={'user':new_user.id}
-        )
-        if open_session_serializer.is_valid(raise_exception=True):
-            open_session = open_session_serializer.save()
+        session_obj = insert_client_session(request,new_user)
 
         data = {
             'user':user_serializer.data,
             'token':Token.objects.get(user=new_user).key,
-            'session':open_session.key
+            'session':session_obj.session.session_key
         }
-
+        
         return Response(data, status=status.HTTP_201_CREATED)
 
     def __authentication(self, request):
@@ -84,20 +95,32 @@ class OutsideUserViews(APIView):
                 'err':'User does not exist or wrong password.'
             }
             return Response(data, status=status.HTTP_403_FORBIDDEN)
+
         user_serializer = BaseUserSerializer(user)
-        
-        open_session_serializer = OpenSessionSerializer(
-            data={'user':user.id}
-        )
-        if open_session_serializer.is_valid(raise_exception=True):
-            open_session = open_session_serializer.save()
+
+        session_obj = insert_client_session(request,user)
+        request.session=session_obj.session
 
         data = {
             'user':user_serializer.data,
             'token':Token.objects.get(user=user).key,
-            'session':open_session.key
+            'session':session_obj.session.session_key,
         }
-        return Response(data, status=status.HTTP_200_OK)
+        
+        response = Response(data, status=status.HTTP_200_OK)
+        
+        max_age = 365 * 24 * 60 * 60
+        expires = datetime.datetime.utcnow() + datetime.timedelta(seconds=max_age)
+        response.set_cookie(
+            key='sessionid',
+            value=request.session.session_key,
+            expires=expires.strftime("%a, %d-%b-%Y %H:%M:%S UTC"),
+            httponly=True,
+            samesite='lax',
+            path='/'
+        )
+
+        return response
 
     def __reset_password(self, request):
         try:
@@ -214,7 +237,7 @@ class OutsideUserViews(APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 class UserViwes(APIView):
-    authentication_classes = (TokenAuthentication,)
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
     permission_classes = (IsAuthenticated,)
 
     def put(self, request, method):
@@ -224,6 +247,9 @@ class UserViwes(APIView):
             return self.__update_user_infos(request)
 
         return self.__wrong_method(request)
+
+    def get(self,request,method):
+        return Response({'success':request.session})
 
     def __wrong_method(self, request):
         data = {

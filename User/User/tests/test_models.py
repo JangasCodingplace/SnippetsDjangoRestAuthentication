@@ -7,14 +7,10 @@ from rest_framework.test import APIRequestFactory
 from django.utils.timezone import now
 
 from rest_framework.authtoken.models import Token
-from .models import (
+from User.User.models import (
     User,
     UserKey
 )
-
-# class UserAPITest(TestCase):
-#     def setUp(self):
-#         self.factory = APIRequestFactory()
 
 class UserModelTest(TestCase):
     """ User and UserKey get texted in this class """
@@ -37,7 +33,7 @@ class UserModelTest(TestCase):
 
     def test_user_is_not_active(self):
         assert not self.user.is_active
-    
+
     def test_if_token_got_generated(self):
         assert Token.objects.filter(
             user=self.superuser

@@ -2,8 +2,7 @@ from rest_framework import serializers
 
 from .models import (
     User,
-    UserKey,
-    OpenSession
+    UserKey
 )
 
 class BaseUserSerializer(serializers.ModelSerializer):
@@ -124,16 +123,3 @@ class BaseResetPWUserSerializer(serializers.ModelSerializer):
         return instance
 
 
-class OpenSessionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OpenSession
-        fields = '__all__'
-
-        extra_kwargs = {
-            'password':{
-                'write_only':True,
-            },
-        }
-    
-    def create(self, validated_data):
-        return OpenSession.objects.create(**validated_data)

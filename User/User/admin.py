@@ -5,17 +5,24 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 
+from User.ClientInformation.models import Client
+
 from .models import (
     User,
     UserKey,
-    OpenSession
 )
 
 class OpenSessionInline(admin.TabularInline):
-    model = OpenSession
+    model = Client
     readonly_fields = (
-        'token',
-        'key',
+        'creation_date',
+        'deactivating_date',
+        'device',
+        'browser',
+        'os',
+        'ip',
+        'user',
+        'session',
     )
     def has_add_permission(self, request, obj=None):
         return False
@@ -180,22 +187,26 @@ admin.site.register(UserKey, UserKeyAdmin)
 
 
 class OpenSessionAdmin(admin.ModelAdmin):
-    model = OpenSession
+    model = Client
     list_display = (
-        'key',
+        'session',
         'user',
-        'token'
+        'ip'
     )
     search_fields = (
-        'key',
-        'token__key',
         'user__email',
         'user__last_name',
         'user__first_name',
     )
     readonly_fields = (
-        'token',
-        'key',
+        'creation_date',
+        'deactivating_date',
+        'device',
+        'browser',
+        'os',
+        'ip',
+        'user',
+        'session',
     )
 
     def has_add_permission(self, request, obj=None):
